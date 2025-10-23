@@ -1,0 +1,25 @@
+<template>
+    <div
+        class="container"
+        data-state={_currentState}
+        onclick={_handleContainerClick}
+    >
+        <iframe
+            class={_frameClass}
+            title="Embedded widget"
+            aria-label="Interactive widget content"
+        ></iframe>
+
+        <template if:true={_isFullView}>
+            <div class="overlayBackdrop" aria-hidden="true"></div>
+            <button
+                class="overlayClose"
+                type="button"
+                onclick={_exitFullscreen}
+                aria-label="Close fullscreen"
+            >
+                ✕
+            </button>
+        </template>
+    </div>
+</template>

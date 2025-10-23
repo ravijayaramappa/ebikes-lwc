@@ -33,6 +33,17 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
+                <identifier>productRegistration</identifier>
+                <componentName>productRegistrationWidget</componentName>
+            </componentInstance>
+        </itemInstances>
+        <mode>Append</mode>
+        <name>detailTabContent</name>
+        <type>Facet</type>
+    </flexiPageRegions>
+    <flexiPageRegions>
+        <itemInstances>
+            <componentInstance>
                 <identifier>forceDetail</identifier>
                 <componentName>force:detailPanel</componentName>
             </componentInstance>
