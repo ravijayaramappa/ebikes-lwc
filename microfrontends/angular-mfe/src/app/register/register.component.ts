@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CanComponentDeactivate } from '../guards/unsaved.guard';
+import '../lib/chat-bridge';
 
 @Component({
   selector: 'app-register',
