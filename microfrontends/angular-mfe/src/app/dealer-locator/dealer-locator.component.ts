@@ -14,13 +14,18 @@ import '../lib/bridge';
       <p>Find a dealer near you.</p>
       <div style="display:flex; gap:16px;">
         <div style="flex:1;">
-          <input placeholder="Enter city or zip" style="width:100%;" [(ngModel)]="query" (keyup.enter)="search()" />
+          <input class="dealer-input" placeholder="Enter city or zip" style="width:100%;" [(ngModel)]="query" (keyup.enter)="search()" />
           <div class="actions" style="margin: 8px 0;">
             <button class="primary" (click)="search()">Search</button>
             <button class="secondary" (click)="clear()">Clear</button>
           </div>
           <ul>
-            <li *ngFor="let d of filteredDealers">{{d.name}} — {{d.city}}, {{d.state}}</li>
+              <li *ngFor="let d of filteredDealers">
+                {{d.name}} — {{d.city}}, {{d.state}}
+              </li>
+              <li *ngIf="filteredDealers.length === 0">
+                No dealers found.
+              </li>
           </ul>
         </div>
         <div style="flex:1; min-height: 400px;">
