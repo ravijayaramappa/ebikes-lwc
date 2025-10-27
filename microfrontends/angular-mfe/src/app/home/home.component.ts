@@ -21,12 +21,12 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <h3>Embedded Dealer Locator (native Angular component)</h3>
+      <h3>Embedeable Dealer Locator (native Angular component)</h3>
       <app-dealer-locator></app-dealer-locator>
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <h3>Embedded Product Registration (native Angular component)</h3>
+      <h3>Embedeable Product Registration (native Angular component)</h3>
       <app-register></app-register>
     </div>
   `
