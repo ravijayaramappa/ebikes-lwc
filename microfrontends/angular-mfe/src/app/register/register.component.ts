@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CanComponentDeactivate } from '../guards/unsaved.guard';
@@ -41,10 +41,11 @@ import ChatBridge from '../lib/bridge';
     </ng-template>
   `
 })
-export class RegisterComponent implements CanComponentDeactivate {
+export class RegisterComponent implements CanComponentDeactivate, OnDestroy {
   model: any = {};
   private savedSnapshot: string = JSON.stringify(this.model);
   submitted = false;
+  private beforeUnloadHandler?: (e: BeforeUnloadEvent) => void;
 
   hasUnsavedChanges(): boolean {
     return JSON.stringify(this.model) !== this.savedSnapshot;
@@ -54,16 +55,40 @@ export class RegisterComponent implements CanComponentDeactivate {
     this.savedSnapshot = JSON.stringify(this.model);
     this.submitted = true;
     try { ChatBridge.send('dirty', { dirty: false }); } catch {}
+    this.toggleBeforeUnload(false);
   }
 
   reset() {
     this.model = {};
     try { ChatBridge.send('dirty', { dirty: false }); } catch {}
+    this.savedSnapshot = JSON.stringify(this.model);
+    this.toggleBeforeUnload(false);
   }
 
   onChange() {
     const dirty = this.hasUnsavedChanges();
     try { ChatBridge.send('dirty', { dirty }); } catch {}
+    this.toggleBeforeUnload(dirty);
+  }
+
+  ngOnDestroy(): void {
+    this.toggleBeforeUnload(false);
+  }
+
+  private toggleBeforeUnload(enable: boolean) {
+    if (enable) {
+      if (!this.beforeUnloadHandler) {
+        this.beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+          e.preventDefault();
+          e.returnValue = '';
+          return '' as any;
+        };
+        window.addEventListener('beforeunload', this.beforeUnloadHandler);
+      }
+    } else if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+      this.beforeUnloadHandler = undefined;
+    }
   }
 }
 

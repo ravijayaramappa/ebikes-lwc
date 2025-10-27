@@ -1,4 +1,8 @@
 import { LightningElement, api } from 'lwc';
+import {
+    getFocusedTabInfo,
+    setTabUnsavedChanges
+} from 'lightning/platformWorkspaceApi';
 
 const BASE_TOKENS = ['allow-scripts', 'allow-pointer-lock'];
 const OPTIONAL_TOKENS = ['allow-downloads', 'allow-forms', 'allow-modals'];
@@ -30,6 +34,12 @@ export default class WidgetContainer extends LightningElement {
     _sandbox;
     _view = 'compact';
 
+    // Workspace API tracking for SPA unsaved-changes (console apps only)
+    _wsSupported = false;
+    _wsTabId;
+    _wsInitialized = false;
+    _wsDirty = false;
+
     connectedCallback() {
         this._setupMessageListener();
     }
@@ -49,6 +59,10 @@ export default class WidgetContainer extends LightningElement {
         if (this._readinessTimeout) {
             clearTimeout(this._readinessTimeout);
             this._readinessTimeout = null;
+        }
+        // Best-effort cleanup of workspace unsaved state
+        if (this._wsDirty) {
+            this._setWorkspaceUnsaved(false);
         }
     }
 
@@ -159,6 +173,7 @@ export default class WidgetContainer extends LightningElement {
     _handleDirty(detail) {
         const isDirty = Boolean(detail && detail.dirty);
         this._toggleBeforeUnload(isDirty);
+        this._setWorkspaceUnsaved(isDirty);
         this.dispatchEvent(
             new CustomEvent('widget-dirty', {
                 detail: { dirty: isDirty },
@@ -170,6 +185,35 @@ export default class WidgetContainer extends LightningElement {
     _handleFullscreenRequest() {
         if (!this._isFullscreen) {
             this._enterFullscreen();
+        }
+    }
+
+    async _ensureWorkspace() {
+        if (this._wsInitialized) return;
+        this._wsInitialized = true;
+        try {
+            const info = await getFocusedTabInfo();
+            if (info && info.tabId) {
+                this._wsSupported = true;
+                this._wsTabId = info.tabId;
+            }
+        } catch {
+            this._wsSupported = false;
+        }
+    }
+
+    async _setWorkspaceUnsaved(hasUnsaved) {
+        if (this._wsDirty === hasUnsaved) return;
+        this._wsDirty = hasUnsaved;
+        await this._ensureWorkspace();
+        if (!this._wsSupported || !this._wsTabId) return;
+        try {
+            await setTabUnsavedChanges({
+                tabId: this._wsTabId,
+                hasUnsavedChanges: hasUnsaved
+            });
+        } catch {
+            // ignore errors silently
         }
     }
 
