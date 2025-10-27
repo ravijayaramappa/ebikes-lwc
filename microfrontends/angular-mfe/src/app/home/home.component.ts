@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RegisterComponent } from '../register/register.component';
+import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RegisterComponent, DealerLocatorComponent],
   template: `
     <div class="card">
       <h2>Welcome to the Angular Microfrontend</h2>
@@ -16,6 +18,16 @@ import { CommonModule } from '@angular/common';
       <div id="lo2-root" style="min-height: 240px; border: 2px dashed #d1d5db; border-radius: 8px; display:flex; align-items:center; justify-content:center;">
         <span>Lightning Out 2.0 placeholder</span>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>Embedded Dealer Locator (native Angular component)</h3>
+      <app-dealer-locator></app-dealer-locator>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>Embedded Product Registration (native Angular component)</h3>
+      <app-register></app-register>
     </div>
   `
 })
