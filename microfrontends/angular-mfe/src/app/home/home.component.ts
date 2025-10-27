@@ -1,13 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RegisterComponent } from '../register/register.component';
 import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.component';
 
 @Component({
-  selector: 'app-home',
-  standalone: true,
-  imports: [CommonModule, RegisterComponent, DealerLocatorComponent],
-  template: `
+    selector: 'app-home',
+    standalone: true,
+    imports: [CommonModule, RegisterComponent, DealerLocatorComponent],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    template: `
     <div class="card">
       <h2>Welcome to the Angular Microfrontend</h2>
       <p>
@@ -16,7 +17,8 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
         LWC will be mounted.
       </p>
       <div id="lo2-root" style="min-height: 240px; border: 2px dashed #d1d5db; border-radius: 8px; display:flex; align-items:center; justify-content:center;">
-        <span>Lightning Out 2.0 placeholder</span>
+        <lightning-out-application components="c-similar-products" id="loApp"></lightning-out-application>
+        <c-similar-products id="loComp" style="height:302px"></c-similar-products>
       </div>
     </div>
 
@@ -31,6 +33,12 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
     </div>
   `
 })
-export class HomeComponent {}
+export class HomeComponent {
+    ngOnInit() {
+        const loApp = document.getElementById("loApp") as any;
+        loApp.orgUrl = "https://dvagworkshopdemoorg-dev-ed.sfdctest.test1.lightning.pc-rnd.force.com";
 
-
+        const loComp = document.getElementById("loComp") as any;
+        loComp.recordId = "a03SM00000AR4MuYAL";
+    }
+}

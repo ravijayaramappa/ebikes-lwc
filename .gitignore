@@ -47,3 +47,4 @@ $RECYCLE.BIN/
 # UTAM
 pageObjects
 utam-lint.sarif
+microfrontends/angular-mfe/.angular/cache
