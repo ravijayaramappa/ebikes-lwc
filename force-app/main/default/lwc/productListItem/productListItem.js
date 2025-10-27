@@ -19,5 +19,12 @@ export default class ProductListItem extends NavigationMixin(LightningElement) {
                 actionName: 'view'
             }
         });
+        this.dispatchEvent(
+            new CustomEvent('viewproduct', {
+                detail: { productId: this.product.Id },
+                bubbles: true,
+                composed: true
+            })
+        );
     }
 }

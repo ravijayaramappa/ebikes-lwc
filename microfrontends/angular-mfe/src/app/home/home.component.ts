@@ -18,7 +18,8 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
       </p>
       <div id="lo2-root" style="min-height: 240px; border: 2px dashed #d1d5db; border-radius: 8px; display:flex; align-items:center; justify-content:center;">
         <lightning-out-application components="c-similar-products" id="loApp"></lightning-out-application>
-        <c-similar-products id="loComp" style="height:302px"></c-similar-products>
+        <c-similar-products id="loComp" style="height:302px" record-id="a03SM00000AR4MuYAL"></c-similar-products>
+        <c-similar-products id="loComp2" style="height:302px" record-id="a03SM00000AR4MjYAL"></c-similar-products>
       </div>
     </div>
 
@@ -36,9 +37,16 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
 export class HomeComponent {
     ngOnInit() {
         const loApp = document.getElementById("loApp") as any;
+        // this is to simulate that you are getting the frontdoor-url and org information dynamically somehow.
         loApp.orgUrl = "https://dvagworkshopdemoorg-dev-ed.sfdctest.test1.lightning.pc-rnd.force.com";
 
         const loComp = document.getElementById("loComp") as any;
-        loComp.recordId = "a03SM00000AR4MuYAL";
+        loComp.addEventListener('viewproduct', (event: any) => {
+            console.log('navigate event for product details', event, event.detail.productId);
+        });
+        const loComp2 = document.getElementById("loComp2") as any;
+        loComp2.addEventListener('viewproduct', (event: any) => {
+            console.log('navigate event for product details', event, event.detail.productId);
+        });
     }
 }
