@@ -24,6 +24,9 @@ yarn-error.log*
 # Dependency directories
 node_modules/
 
+# Angular dist
+microfrontends/angular-mfe/dist
+
 # Eslint cache
 .eslintcache
 
