@@ -1,11 +1,11 @@
 /**
- * Chat Bridge - EventTarget-based iframe ↔ host communication
+ * Bridge - EventTarget-based iframe ↔ host communication
  * Provides secure, structured interface for widget development
  * Auto-handles theme synchronization and error telemetry
  *
- * Singleton instance exported as ChatBridge
+ * Singleton instance exported as Bridge
  */
-export class ChatBridgeClass extends EventTarget {
+class BridgeClass extends EventTarget {
   connected: boolean = false;
   parentOrigin: string | null = null;
   currentTheme: Record<string, any> = {};
@@ -207,8 +207,6 @@ export class ChatBridgeClass extends EventTarget {
   }
 }
 
-const bridge = new ChatBridgeClass();
-export { bridge as ChatBridge };
+const bridge = new BridgeClass();
+
 export default bridge;
-
-

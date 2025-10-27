@@ -114,6 +114,8 @@ export default class WidgetContainer extends LightningElement {
             if (eventType === 'resize') {
                 this._hasExplicitResize = true;
                 this._handleResize(detail);
+            } else if (eventType === 'dirty') {
+                this._handleDirty(detail);
             } else if (eventType === 'widget-ready') {
                 this._handleWidgetReady(detail);
             } else if (eventType === 'fullscreen-request') {
@@ -152,6 +154,17 @@ export default class WidgetContainer extends LightningElement {
             this._readinessTimeout = null;
         }
         this.dispatchEvent(new CustomEvent('widget-ready', { bubbles: true }));
+    }
+
+    _handleDirty(detail) {
+        const isDirty = Boolean(detail && detail.dirty);
+        this._toggleBeforeUnload(isDirty);
+        this.dispatchEvent(
+            new CustomEvent('widget-dirty', {
+                detail: { dirty: isDirty },
+                bubbles: true
+            })
+        );
     }
 
     _handleFullscreenRequest() {
@@ -333,6 +346,30 @@ export default class WidgetContainer extends LightningElement {
         if (JSON.stringify(payload) !== JSON.stringify(this._lastPayloadData)) {
             this._lastPayloadData = payload;
             this._postToIframe('data', payload);
+        }
+    }
+
+    _toggleBeforeUnload(enable) {
+        if (enable) {
+            if (!this._beforeUnloadHandler) {
+                this._beforeUnloadHandler = (e) => {
+                    e.preventDefault();
+                    // Chrome requires returnValue to be set
+                    // eslint-disable-next-line no-param-reassign
+                    e.returnValue = '';
+                    return '';
+                };
+                window.addEventListener(
+                    'beforeunload',
+                    this._beforeUnloadHandler
+                );
+            }
+        } else if (this._beforeUnloadHandler) {
+            window.removeEventListener(
+                'beforeunload',
+                this._beforeUnloadHandler
+            );
+            this._beforeUnloadHandler = null;
         }
     }
 
