@@ -37,6 +37,14 @@
                     "renderPriority": "NEUTRAL",
                     "renditionMap": {},
                     "type": "component"
+                },
+                {
+                    "componentAttributes": {},
+                    "componentName": "c:dealerLocatorWidget",
+                    "id": "ea748732-1141-45e5-8536-6bd990ceda03",
+                    "renderPriority": "NEUTRAL",
+                    "renditionMap": {},
+                    "type": "component"
                 }
             ],
             "id": "d4dc54f2-fbf6-4ac3-821c-d40ce504c885",
