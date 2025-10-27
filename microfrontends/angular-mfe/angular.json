@@ -16,8 +16,18 @@
                         "browser": "src/main.ts",
                         "tsConfig": "tsconfig.app.json",
                         "polyfills": ["zone.js"],
-                        "assets": ["src/assets"],
-                        "styles": ["src/styles.scss"]
+                        "assets": [
+                            "src/assets",
+                            {
+                                "glob": "**/*",
+                                "input": "node_modules/leaflet/dist/images",
+                                "output": "assets/"
+                            }
+                        ],
+                        "styles": [
+                            "src/styles.scss",
+                            "node_modules/leaflet/dist/leaflet.css"
+                        ]
                     }
                 },
                 "serve": {
