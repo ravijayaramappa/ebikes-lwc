@@ -28,6 +28,9 @@ export default class WidgetContainer extends LightningElement {
 
     _lastThemeData = {};
     _lastPayloadData = {};
+    _bridgeReady = false;
+    _hasSentTheme = false;
+    _hasSentData = false;
 
     _src;
     _srcdoc;
@@ -262,6 +265,7 @@ export default class WidgetContainer extends LightningElement {
     };
 
     _handleBridgeReady() {
+        this._bridgeReady = true;
         this._setState(STATES.LOADED);
         this._log('bridge-ready');
     }
@@ -418,16 +422,27 @@ export default class WidgetContainer extends LightningElement {
             }
         }
         this._lastThemeData = theme;
-        this._postToIframe('theme', theme);
+        if (this._bridgeReady) {
+            this._postToIframe('theme', theme);
+            this._hasSentTheme = true;
+            this._log('send theme', theme);
+        } else {
+            this._log('queue theme until bridge ready', theme);
+        }
     }
 
     _sendInitialData() {
-        this._postToIframe('theme', this._lastThemeData);
-        const payload = this._collectDataAttributes();
-        if (JSON.stringify(payload) !== JSON.stringify(this._lastPayloadData)) {
-            this._lastPayloadData = payload;
-            this._postToIframe('data', payload);
+        // Always send latest theme and data once bridge is ready
+        if (this._lastThemeData && Object.keys(this._lastThemeData).length) {
+            this._postToIframe('theme', this._lastThemeData);
+            this._hasSentTheme = true;
+            this._log('send theme (initial)', this._lastThemeData);
         }
+        const payload = this._collectDataAttributes();
+        this._lastPayloadData = { ...payload };
+        this._postToIframe('data', this._lastPayloadData);
+        this._hasSentData = true;
+        this._log('send data (initial)', this._lastPayloadData);
     }
 
     _toggleBeforeUnload(enable) {
@@ -463,7 +478,13 @@ export default class WidgetContainer extends LightningElement {
         });
         const payload = this._collectDataAttributes();
         this._lastPayloadData = payload;
-        this._postToIframe('data', payload);
+        if (this._bridgeReady) {
+            this._postToIframe('data', payload);
+            this._hasSentData = true;
+            this._log('send data', payload);
+        } else {
+            this._log('queue data until bridge ready', payload);
+        }
     }
 
     @api
