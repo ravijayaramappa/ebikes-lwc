@@ -18,6 +18,8 @@
                         "polyfills": ["zone.js"],
                         "assets": [
                             "src/assets",
+                            "src/auth.html",
+                            "src/auth.js",
                             {
                                 "glob": "**/*",
                                 "input": "node_modules/leaflet/dist/images",
