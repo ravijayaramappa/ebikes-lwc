@@ -6,5 +6,5 @@ Install SF CLI by following instrutions [here](https://developer.salesforce.com/
 
 ## Commands
 
-1. Login `sf org login web -s -a mydevorg -r     https://test.test1.pc-rnd.salesforce.com/`
-2. Open an org `sf org open -o dvag.appfdn@salesforce.com`
+1. Login `sf org login web -s -a mydevorg -r https://test.salesforce.com`
+2. Open an org `sf org open -o dvag.appfdn-prod@salesforce.com`

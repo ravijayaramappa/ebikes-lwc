@@ -25,11 +25,15 @@
     <referrerPolicyOriginWhenCrossOrigin
     >true</referrerPolicyOriginWhenCrossOrigin>
     <selfRegPage>CommunitiesSelfReg</selfRegPage>
-    <siteAdmin>dvag.appfdn@salesforce.com</siteAdmin>
+    <!--siteAdmin>dvag.appfdn@salesforce.com</siteAdmin>
+    <siteGuestRecordDefaultOwner>dvag.appfdn@salesforce.com</siteGuestRecordDefaultOwner>
+    <subdomain>dvagworkshopdemoorg-dev-ed.sfdctest.test1.lightning.pc-rnd.force.com</subdomain-->
+    <siteAdmin>dvag.appfdn-prod@salesforce.com</siteAdmin>
     <siteGuestRecordDefaultOwner
-    >dvag.appfdn@salesforce.com</siteGuestRecordDefaultOwner>
-    <siteType>ChatterNetwork</siteType>
+    >dvag.appfdn-prod@salesforce.com</siteGuestRecordDefaultOwner>
     <subdomain
-    >dvagworkshopdemoorg-dev-ed.sfdctest.test1.lightning.pc-rnd.force.com</subdomain>
+    >dvagworkshopdemoorg-dev-ed.sfdctest.lightning.force.com</subdomain>
+
+    <siteType>ChatterNetwork</siteType>
     <urlPathPrefix>ebikes</urlPathPrefix>
 </CustomSite>
