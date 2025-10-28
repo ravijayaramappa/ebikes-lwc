@@ -3,6 +3,27 @@
     <head>
         <meta charset="utf-8" />
         <title>Authorization - Angular MFE</title>
+
+        <!-- Salesforce OAuth/Lightning Out configuration -->
+        <!-- Replace placeholder values with your Connected App and org information -->
+        <meta name="sf.client_id" content="3MVG9x2D7w6gNN5lit6AMBPztSzHmH7mQa4J4ypViTLWNytm9OTW28i2nltjc2PAwRwdq__y9gpEoK6tU0R5w" />
+        <!-- Optional: override computed redirect URI; must match Connected App callback -->
+        <meta name="sf.redirect_uri" content="https://dvag-demo-local.com:4200/auth.html" />
+        <!-- Use your My Domain login host or login/test.salesforce.com -->
+        <meta name="sf.auth_base_url" content="https://test.salesforce.com" />
+        <!-- Optional: override requested OAuth scopes (space-delimited) -->
+        <meta name="sf.scope" content="api web" />
+        <!-- Optional: choose oauth flow: 'pkce' (default) or 'implicit' to avoid token POST/CORS -->
+        <meta name="sf.oauth_flow" content="implicit" />
+        <!-- Optional: backend proxy to POST /services/oauth2/token if using PKCE on static hosts -->
+        <meta name="sf.token_proxy_url" content="" />
+        <!-- Instance URL hosting your Lightning Out App (e.g., https://your-domain.my.salesforce.com) -->
+        <meta name="sf.instance_url" content="https://dvagworkshopdemoorg-dev-ed.sfdctest.lightning.force.com" />
+        <!-- Lightning Out 2.0 App Id from Lightning Out App Manager -->
+        <meta name="sf.lightning_out_app_id" content="1UsD1000000000BKAQ" />
+        <!-- Auto-start OAuth on load (true/false). Leave empty or true to auto-start. -->
+        <meta name="sf.auto_auth" content="true" />
+
         <base href="/" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>
