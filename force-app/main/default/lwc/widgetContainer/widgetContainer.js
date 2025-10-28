@@ -34,6 +34,15 @@ export default class WidgetContainer extends LightningElement {
     _sandbox;
     _view = 'compact';
 
+    // Debug logging helper for POC
+    _debugEnabled = true;
+    _log(...args) {
+        if (this._debugEnabled) {
+            // eslint-disable-next-line no-console
+            console.log('[WidgetContainer]', JSON.stringify(args, null, 2));
+        }
+    }
+
     // Workspace API tracking for SPA unsaved-changes (console apps only)
     _wsSupported = false;
     _wsTabId;
@@ -42,6 +51,7 @@ export default class WidgetContainer extends LightningElement {
 
     connectedCallback() {
         this._setupMessageListener();
+        this._log('connectedCallback');
     }
 
     renderedCallback() {
@@ -51,6 +61,7 @@ export default class WidgetContainer extends LightningElement {
             this._applySandbox();
             this._updateIframeSrc();
             this._sendInitialTheme();
+            this._log('renderedCallback: iframe ready');
         }
     }
 
@@ -64,6 +75,7 @@ export default class WidgetContainer extends LightningElement {
         if (this._wsDirty) {
             this._setWorkspaceUnsaved(false);
         }
+        this._log('disconnectedCallback');
     }
 
     @api
@@ -123,8 +135,10 @@ export default class WidgetContainer extends LightningElement {
         }
         const payload = event.data || {};
         const { type, data } = payload;
+        this._log('receive', type, data);
         if (type === 'bridge-event') {
             const { eventType, detail } = data || {};
+            this._log('bridge-event', eventType, detail);
             if (eventType === 'resize') {
                 this._hasExplicitResize = true;
                 this._handleResize(detail);
@@ -159,6 +173,7 @@ export default class WidgetContainer extends LightningElement {
             Number.isFinite(height)
         ) {
             if (this._iframe) this._iframe.style.height = height + 'px';
+            this._log('applied resize', height);
         }
     }
 
@@ -168,6 +183,7 @@ export default class WidgetContainer extends LightningElement {
             this._readinessTimeout = null;
         }
         this.dispatchEvent(new CustomEvent('widget-ready', { bubbles: true }));
+        this._log('widget-ready');
     }
 
     _handleDirty(detail) {
@@ -228,6 +244,7 @@ export default class WidgetContainer extends LightningElement {
                 bubbles: true
             })
         );
+        this._log('enter fullscreen');
     }
 
     _exitFullscreen = () => {
@@ -241,16 +258,19 @@ export default class WidgetContainer extends LightningElement {
                 bubbles: true
             })
         );
+        this._log('exit fullscreen');
     };
 
     _handleBridgeReady() {
         this._setState(STATES.LOADED);
+        this._log('bridge-ready');
     }
 
     _handleBridgeError(errorData) {
         this.dispatchEvent(
             new CustomEvent('widget-bridge-error', { detail: errorData })
         );
+        this._log('bridge-error', errorData);
     }
 
     _handleContainerClick() {
@@ -263,6 +283,7 @@ export default class WidgetContainer extends LightningElement {
         frameEls.forEach((f) => {
             f.sandbox = tokens;
         });
+        this._log('sandbox', tokens);
     }
 
     _computeSandboxTokens() {
@@ -311,6 +332,10 @@ export default class WidgetContainer extends LightningElement {
         // load events
         frame.onload = this._handleIframeLoad;
         frame.onerror = this._handleIframeError;
+        this._log(
+            'updateIframeSrc',
+            this._src ? 'src' : this._srcdoc ? 'srcdoc' : 'blank'
+        );
     }
 
     _handleIframeLoad = () => {
@@ -320,6 +345,7 @@ export default class WidgetContainer extends LightningElement {
                 bubbles: true
             })
         );
+        this._log('iframe-loaded');
         // eslint-disable-next-line @lwc/lwc/no-async-operation
         this._readinessTimeout = setTimeout(() => {
             if (this._currentState !== STATES.LOADED) {
@@ -333,6 +359,7 @@ export default class WidgetContainer extends LightningElement {
                         bubbles: true
                     })
                 );
+                this._log('widget-readiness-warning');
             }
         }, 3000);
     };
@@ -350,9 +377,14 @@ export default class WidgetContainer extends LightningElement {
         const win = frame && frame.contentWindow;
         if (!win) return;
         try {
-            win.postMessage({ type: `chat-message-${type}`, data }, '*');
-        } catch {
-            // swallow
+            const msgType = `salesforce-${type}`;
+            win.postMessage(
+                'BRIDGE-JSON:' + JSON.stringify({ type: msgType, data }),
+                '*'
+            );
+            this._log('postMessage', msgType, data);
+        } catch (e) {
+            this._log('postMessage error', e.message);
         }
     }
 
@@ -363,7 +395,12 @@ export default class WidgetContainer extends LightningElement {
         for (let i = 0; i < host.attributes.length; i++) {
             const a = host.attributes[i];
             if (a.name.startsWith('data-')) {
-                out[a.name.replace(/^data-/, '')] = a.value;
+                const raw = a.name.replace(/^data-/, '');
+                // convert kebab-case to camelCase to match expected keys like productName
+                const camel = raw.replace(/-([a-z])/g, (m, c) =>
+                    c.toUpperCase()
+                );
+                out[camel] = a.value;
             }
         }
         return out;

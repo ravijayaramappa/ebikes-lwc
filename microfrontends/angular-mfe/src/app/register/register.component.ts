@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CanComponentDeactivate } from '../guards/unsaved.guard';
@@ -10,7 +10,7 @@ import ChatBridge from '../lib/bridge';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="card" *ngIf="!submitted; else confirmation">
-      <h2>Product Registration</h2>
+      <h2>Product Registration<span *ngIf="productName"> — {{ productName }}</span></h2>
       <form (ngSubmit)="submit()">
         <label for="name">Full Name</label>
         <input id="name" name="name" [(ngModel)]="model.name" (ngModelChange)="onChange()" required />
@@ -41,11 +41,22 @@ import ChatBridge from '../lib/bridge';
     </ng-template>
   `
 })
-export class RegisterComponent implements CanComponentDeactivate, OnDestroy {
+export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnInit {
   model: any = {};
   private savedSnapshot: string = JSON.stringify(this.model);
   submitted = false;
   private beforeUnloadHandler?: (e: BeforeUnloadEvent) => void;
+  productName = '';
+  private dataHandler?: (e: any) => void;
+
+  ngOnInit(): void {
+    try {
+      const data = ChatBridge.getData?.() || {};
+      this.applyIncomingData(data);
+      this.dataHandler = (e: any) => this.applyIncomingData(e?.detail || {});
+      (ChatBridge as any).addEventListener?.('data', this.dataHandler);
+    } catch {}
+  }
 
   hasUnsavedChanges(): boolean {
     return JSON.stringify(this.model) !== this.savedSnapshot;
@@ -73,6 +84,11 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy {
 
   ngOnDestroy(): void {
     this.toggleBeforeUnload(false);
+    try {
+      if (this.dataHandler) {
+        (ChatBridge as any).removeEventListener?.('data', this.dataHandler);
+      }
+    } catch {}
   }
 
   private toggleBeforeUnload(enable: boolean) {
@@ -88,6 +104,14 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy {
     } else if (this.beforeUnloadHandler) {
       window.removeEventListener('beforeunload', this.beforeUnloadHandler);
       this.beforeUnloadHandler = undefined;
+    }
+  }
+
+  private applyIncomingData(payload: any) {
+    if (payload && typeof payload === 'object') {
+      if (payload.productName && payload.productName !== this.productName) {
+        this.productName = payload.productName;
+      }
     }
   }
 }

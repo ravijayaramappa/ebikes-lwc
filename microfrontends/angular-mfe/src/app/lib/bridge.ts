@@ -5,6 +5,7 @@
  *
  * Singleton instance exported as Bridge
  */
+
 class BridgeClass extends EventTarget {
   connected: boolean = false;
   parentOrigin: string | null = null;
@@ -21,20 +22,34 @@ class BridgeClass extends EventTarget {
     this.setupErrorCapture();
     this.signalReady();
     // eslint-disable-next-line no-console
-    console.log('[ChatBridge] Initialized and ready for communication');
+    console.log('[Bridge] Initialized and ready for communication');
   }
 
   handleHostMessage(event: MessageEvent<any>) {
-    if (!event.data || typeof event.data.type !== 'string') return;
-    const { type, data } = event.data;
+    if (typeof event.data !== 'string' || !event.data.startsWith('BRIDGE-JSON:')) {
+      return;
+    }
+    let type: string;
+    let data: any;
+    try {
+      const json = JSON.parse(event.data.slice(12));
+      type = json.type;
+      data = json.data;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn('[Bridge] Failed to parse message:', error);
+      return;
+    }
+    // eslint-disable-next-line no-console
+    console.log('[Bridge] host->widget', type, data);
     switch (type) {
-      case 'chat-message-theme':
+      case 'salesforce-theme':
         this.handleThemeUpdate(data);
         break;
-      case 'chat-message-data':
+      case 'salesforce-data':
         this.handleDataUpdate(data);
         break;
-      case 'chat-message-ready':
+      case 'bridge-ready':
         this.handleConnectionReady();
         break;
       default:
@@ -95,12 +110,12 @@ class BridgeClass extends EventTarget {
   reportError(errorData: any) {
     this.sendToHost('bridge-error', errorData);
     // eslint-disable-next-line no-console
-    console.error('[ChatBridge] Error reported:', errorData);
+    console.error('[Bridge] Error reported:', errorData);
   }
 
   signalReady() {
     this.sendToHost('bridge-ready', {
-      bridge: 'ChatBridge',
+      bridge: 'Bridge',
       version: '1.0.0',
       timestamp: Date.now()
     });
@@ -111,7 +126,7 @@ class BridgeClass extends EventTarget {
     const startObserver = () => {
       if (typeof (window as any).ResizeObserver === 'undefined') {
         // eslint-disable-next-line no-console
-        console.warn('[ChatBridge] ResizeObserver not available in this environment');
+        console.warn('[Bridge] ResizeObserver not available in this environment');
         return;
       }
 
@@ -149,7 +164,7 @@ class BridgeClass extends EventTarget {
       observer.observe(document.body, { box: 'border-box' } as any);
       this.sendToHost('bridge-event', {
         eventType: 'widget-ready',
-        detail: { bridge: 'ChatBridge', version: '1.0.0', timestamp: Date.now() }
+        detail: { bridge: 'Bridge', version: '1.0.0', timestamp: Date.now() }
       });
     };
 
@@ -162,13 +177,13 @@ class BridgeClass extends EventTarget {
 
   sendToHost(type: string, data: any) {
     try {
-      const message = { type, data, source: 'chat-bridge' };
+      const message = { type, data, source: 'bridge' };
       // eslint-disable-next-line no-console
-      console.log('[ChatBridge] Sending message to host:', message);
+      console.log('[Bridge] Sending message to host:', message);
       window.parent.postMessage(message, '*');
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.warn('[ChatBridge] Failed to send message to host:', error);
+      console.warn('[Bridge] Failed to send message to host:', error);
     }
   }
 
