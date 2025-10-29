@@ -38,7 +38,7 @@ npm start
 cd microfrontends/angular-mfe
 npm install
 npm run mkcert
-npm start
+npm run start:ssl
 # open:
 #   https://dvag-demo-local.com:4200/auth.html
 ```
