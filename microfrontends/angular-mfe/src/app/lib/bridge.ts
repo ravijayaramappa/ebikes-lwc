@@ -7,25 +7,21 @@
  */
 
 class BridgeClass extends EventTarget {
-  connected: boolean = false;
-  parentOrigin: string | null = null;
-  currentTheme: Record<string, any> = {};
-  currentData: Record<string, any> = {};
+  #connected: boolean = false;
+  #currentTheme: Record<string, any> = {};
+  #currentData: Record<string, any> = {};
 
   constructor() {
     super();
-    this.init();
-  }
-
-  init() {
-    window.addEventListener('message', this.handleHostMessage.bind(this));
-    this.setupErrorCapture();
-    this.signalReady();
+    window.addEventListener('message', (e: MessageEvent<any>) => this.#handleHostMessage(e));
+    this.#setupErrorCapture();
+    this.#sendToHost('bridge-ready');
+    this.#setupResizeObserver();
     // eslint-disable-next-line no-console
     console.log('[Bridge] Initialized and ready for communication');
   }
 
-  handleHostMessage(event: MessageEvent<any>) {
+  #handleHostMessage(event: MessageEvent<any>) {
     if (typeof event.data !== 'string' || !event.data.startsWith('BRIDGE-JSON:')) {
       return;
     }
@@ -44,36 +40,37 @@ class BridgeClass extends EventTarget {
     console.log('[Bridge] host->widget', type, data);
     switch (type) {
       case 'salesforce-theme':
-        this.handleThemeUpdate(data);
+        this.#handleThemeUpdate(data);
         break;
       case 'salesforce-data':
-        this.handleDataUpdate(data);
+        this.#handleDataUpdate(data);
         break;
       case 'bridge-ready':
-        this.handleConnectionReady();
-        break;
-      default:
+        this.#handleConnectionReady();
         break;
     }
   }
 
-  handleThemeUpdate(themeData: any) {
-    this.currentTheme = { ...themeData };
-    this.applyThemeToDocument(themeData);
-    this.dispatchEvent(new CustomEvent('theme', { detail: themeData }));
+  #handleThemeUpdate(themeData: any) {
+    this.#currentTheme = { ...themeData };
+    this.#applyThemeToDocument(themeData);
+    // use super to escape the override
+    super.dispatchEvent(new CustomEvent('theme', { detail: themeData }));
   }
 
-  handleDataUpdate(payload: any) {
-    this.currentData = { ...payload };
-    this.dispatchEvent(new CustomEvent('data', { detail: payload }));
+  #handleDataUpdate(payload: any) {
+    this.#currentData = { ...payload };
+    // use super to escape the override
+    super.dispatchEvent(new CustomEvent('data', { detail: payload }));
   }
 
-  handleConnectionReady() {
-    this.connected = true;
-    this.dispatchEvent(new CustomEvent('connected', { detail: { bridge: this } }));
+  #handleConnectionReady() {
+    this.#connected = true;
+    // use super to escape the override
+    super.dispatchEvent(new CustomEvent('connected'));
   }
 
-  applyThemeToDocument(themeData: Record<string, any>) {
+  #applyThemeToDocument(themeData: Record<string, any>) {
     const documentElement = document.documentElement as HTMLElement;
     requestAnimationFrame(() => {
       Object.entries(themeData).forEach(([property, value]) => {
@@ -84,9 +81,10 @@ class BridgeClass extends EventTarget {
     });
   }
 
-  setupErrorCapture() {
+  #setupErrorCapture() {
+    // this allows salesforce to collect telemetry about errors in your app
     window.addEventListener('error', (event: ErrorEvent) => {
-      this.reportError({
+      this.#sendToHost('bridge-error', {
         type: 'javascript-error',
         message: event.message,
         filename: event.filename,
@@ -98,7 +96,7 @@ class BridgeClass extends EventTarget {
     });
 
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-      this.reportError({
+      this.#sendToHost('bridge-error', {
         type: 'unhandled-rejection',
         reason: (event.reason as any)?.toString?.() || 'Unknown rejection',
         stack: (event.reason as any)?.stack,
@@ -107,22 +105,7 @@ class BridgeClass extends EventTarget {
     });
   }
 
-  reportError(errorData: any) {
-    this.sendToHost('bridge-error', errorData);
-    // eslint-disable-next-line no-console
-    console.error('[Bridge] Error reported:', errorData);
-  }
-
-  signalReady() {
-    this.sendToHost('bridge-ready', {
-      bridge: 'Bridge',
-      version: '1.0.0',
-      timestamp: Date.now()
-    });
-    this.setupResizeObserver();
-  }
-
-  setupResizeObserver() {
+  #setupResizeObserver() {
     const startObserver = () => {
       if (typeof (window as any).ResizeObserver === 'undefined') {
         // eslint-disable-next-line no-console
@@ -156,13 +139,13 @@ class BridgeClass extends EventTarget {
           scheduled = true;
           requestAnimationFrame(() => {
             scheduled = false;
-            this.sendToHost('bridge-event', { eventType: 'resize', detail: { height: heightPx } });
+            this.#sendToHost('bridge-event', { eventType: 'resize', detail: { height: heightPx } });
           });
         }
       });
 
       observer.observe(document.body, { box: 'border-box' } as any);
-      this.sendToHost('bridge-event', {
+      this.#sendToHost('bridge-event', {
         eventType: 'widget-ready',
         detail: { bridge: 'Bridge', version: '1.0.0', timestamp: Date.now() }
       });
@@ -175,7 +158,7 @@ class BridgeClass extends EventTarget {
     }
   }
 
-  sendToHost(type: string, data: any) {
+  #sendToHost(type: string, data?: any) {
     try {
       const message = { type, data, source: 'bridge' };
       // eslint-disable-next-line no-console
@@ -187,38 +170,26 @@ class BridgeClass extends EventTarget {
     }
   }
 
-  // Override dispatchEvent to mirror to host (except internal types)
+  // Override dispatchEvent to forward custom events to the host via post message
   dispatchEvent(event: Event): boolean {
     const result = super.dispatchEvent(event);
-    const type = event.type;
-    if (type !== 'theme' && type !== 'data' && type !== 'connected' && type !== 'resize') {
-      this.sendToHost('bridge-event', {
-        eventType: type,
-        detail: (event as CustomEvent).detail,
-        timestamp: Date.now()
-      });
-    }
+    this.#sendToHost('custom-event', {
+      eventType: event.type,
+      detail: (event as CustomEvent).detail
+    });
     return result;
   }
 
   getTheme() {
-    return { ...this.currentTheme };
+    return { ...this.#currentTheme };
   }
 
   getData() {
-    return { ...this.currentData };
+    return { ...this.#currentData };
   }
 
   isConnected() {
-    return this.connected;
-  }
-
-  send(eventType: string, detail: any = null) {
-    this.dispatchEvent(new CustomEvent(eventType, { detail }));
-  }
-
-  requestExpansion(options: Record<string, any> = {}) {
-    this.send('expand', { reason: 'user-request', ...options });
+    return this.#connected;
   }
 }
 
