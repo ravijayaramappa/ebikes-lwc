@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CanComponentDeactivate } from '../guards/unsaved.guard';
-import ChatBridge from '../lib/bridge';
+import bridge from '../lib/bridge';
 
 @Component({
   selector: 'app-register',
@@ -51,10 +51,10 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnI
 
   ngOnInit(): void {
     try {
-      const data = ChatBridge.getData?.() || {};
+      const data = bridge.getData?.() || {};
       this.applyIncomingData(data);
       this.dataHandler = (e: any) => this.applyIncomingData(e?.detail || {});
-      (ChatBridge as any).addEventListener?.('data', this.dataHandler);
+      (bridge as any).addEventListener?.('data', this.dataHandler);
     } catch {}
   }
 
@@ -65,20 +65,20 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnI
   submit() {
     this.savedSnapshot = JSON.stringify(this.model);
     this.submitted = true;
-    try { ChatBridge.send('dirty', { dirty: false }); } catch {}
+    bridge.isConnected() && bridge.dispatchEvent(new CustomEvent('dirty', { detail: { dirty: false } }));
     this.toggleBeforeUnload(false);
   }
 
   reset() {
     this.model = {};
-    try { ChatBridge.send('dirty', { dirty: false }); } catch {}
+    bridge.isConnected() && bridge.dispatchEvent(new CustomEvent('dirty', { detail: { dirty: false } }));
     this.savedSnapshot = JSON.stringify(this.model);
     this.toggleBeforeUnload(false);
   }
 
   onChange() {
     const dirty = this.hasUnsavedChanges();
-    try { ChatBridge.send('dirty', { dirty }); } catch {}
+    bridge.isConnected() && bridge.dispatchEvent(new CustomEvent('dirty', { detail: { dirty } }));
     this.toggleBeforeUnload(dirty);
   }
 
@@ -86,7 +86,7 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnI
     this.toggleBeforeUnload(false);
     try {
       if (this.dataHandler) {
-        (ChatBridge as any).removeEventListener?.('data', this.dataHandler);
+        (bridge as any).removeEventListener?.('data', this.dataHandler);
       }
     } catch {}
   }

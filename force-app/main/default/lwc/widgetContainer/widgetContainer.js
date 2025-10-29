@@ -145,16 +145,28 @@ export default class WidgetContainer extends LightningElement {
             if (eventType === 'resize') {
                 this._hasExplicitResize = true;
                 this._handleResize(detail);
-            } else if (eventType === 'dirty') {
-                this._handleDirty(detail);
             } else if (eventType === 'widget-ready') {
                 this._handleWidgetReady(detail);
-            } else if (eventType === 'fullscreen-request') {
-                this._handleFullscreenRequest(detail);
             } else {
-                this.dispatchEvent(
-                    new CustomEvent(eventType, { detail, bubbles: true })
-                );
+                throw new RangeError(`Invalid bridge event ${eventType}`);
+            }
+        } else if (type === 'custom-event') {
+            const { eventType, detail } = data || {};
+            this._log('custom-event', eventType, detail);
+            const shouldRunDefault = this.dispatchEvent(
+                new CustomEvent(eventType, {
+                    detail,
+                    bubbles: true,
+                    cancelable: true,
+                    defaultPrevented: true
+                })
+            );
+            if (shouldRunDefault) {
+                if (eventType === 'dirty') {
+                    this._handleDirty(detail);
+                } else if (eventType === 'fullscreen-request') {
+                    this._handleFullscreenRequest(detail);
+                }
             }
         } else if (type === 'bridge-ready') {
             this._handleBridgeReady(data);
