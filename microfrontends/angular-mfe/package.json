@@ -4,9 +4,11 @@
     "private": true,
     "scripts": {
         "start": "ng serve --open --port 4200",
+        "start:ssl": "ng serve --host dvag-demo-local.com --port 4200 --ssl --ssl-cert dvag-demo-cert.pem --ssl-key dvag-demo-key.pem --open",
         "build": "ng build",
         "test": "ng test",
-        "lint": "echo \"No lint configured\""
+        "lint": "echo \"No lint configured\"",
+        "mkcert": "./scripts/mkcert.sh"
     },
     "dependencies": {
         "@angular/animations": "^18.2.0",

@@ -1,4 +1,4 @@
-Angular Microfrontend (Standalone)
+# Angular Microfrontend (Standalone)
 
 This is a self-contained Angular app demonstrating two independent microfrontends that can be embedded later via WidgetContainer, but are fully functional on their own domain:
 
@@ -7,11 +7,11 @@ This is a self-contained Angular app demonstrating two independent microfrontend
 
 Run locally on http://localhost:4200.
 
-Prerequisites
+## Prerequisites
 
 - Node 18+
 
-Install and run
+## Install and run
 
 ```bash
 cd microfrontends/angular-mfe
@@ -22,12 +22,27 @@ npm start
 #   http://localhost:4200/dealer-locator
 ```
 
-Routes
+### Routes
 
-- /register: Warranty/Registration form with validation and a CanDeactivate guard to prevent accidental data loss.
-- /dealer-locator: Read-only dealer listing loaded from local assets.
+- `/register`: Warranty/Registration form with validation and a CanDeactivate guard to prevent accidental data loss.
+- `/dealer-locator`: Read-only dealer listing loaded from local assets.
 
-Notes
+### Notes
 
 - This app is independent of Salesforce. No LMS/Apex/Canvas.
 - Later, when embedded via WidgetContainer, only lifecycle hooks (e.g., unload/dirty) are needed.
+
+## Install and run with https
+
+```bash
+cd microfrontends/angular-mfe
+npm install
+npm run mkcert
+npm run start:ssl
+# open:
+#   https://dvag-demo-local.com:4200/auth.html
+```
+
+### Routes
+
+- `/auth.html`: This demonstrates how to obtain and use a Frontdoor URL. Redirects to the home page after a successful authentication.

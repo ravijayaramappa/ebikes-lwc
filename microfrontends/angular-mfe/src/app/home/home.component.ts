@@ -17,7 +17,7 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
         LWC will be mounted.
       </p>
       <div id="lo2-root" style="min-height: 240px; border: 2px dashed #d1d5db; border-radius: 8px; display:flex; align-items:center; justify-content:center;">
-        <lightning-out-application components="c-similar-products" id="loApp"></lightning-out-application>
+        <lightning-out-application app-id="1UsD1000000000BKAQ" components="c-similar-products" id="loApp"></lightning-out-application>
         <c-similar-products id="loComp" style="height:302px" record-id="a03D10000058zeiIAA"></c-similar-products>
         <c-similar-products id="loComp2" style="height:302px" record-id="a03D10000058zelIAA"></c-similar-products>
       </div>
@@ -36,9 +36,18 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
 })
 export class HomeComponent {
     ngOnInit() {
+        let params = new URLSearchParams(document.location.search);
+        const frontdoorUrl = params.get('frontdoor-url');
+
         const loApp = document.getElementById("loApp") as any;
-        // this is to simulate that you are getting the frontdoor-url and org information dynamically somehow.
-        loApp.orgUrl = "https://dvagworkshopdemoorg-dev-ed.sfdctest.lightning.force.com";
+
+        if (frontdoorUrl) {
+            // Perform authentication
+            loApp.frontdoorUrl = frontdoorUrl;
+        } else {
+            // Assume authentication
+            loApp.orgUrl = "https://dvagworkshopdemoorg-dev-ed.sfdctest.lightning.force.com";
+        }
 
         const loComp = document.getElementById("loComp") as any;
         loComp.addEventListener('viewproduct', (event: any) => {
