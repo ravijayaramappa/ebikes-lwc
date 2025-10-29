@@ -1,51 +1,7 @@
 // auth.js - Vanilla JavaScript authorization logic
 
-/**
- * Performs authorization check
- */
-async function checkAuthorization() {
-    try {
-        const clientId = getMetaContent('sf.client_id');
-        const authBaseUrl = getMetaContent('sf.auth_base_url');
-        const redirectUri = getMetaContent('sf.redirect_uri');
-        const autoAuth = getMetaContent('sf.auto_auth');
-        const scope = getMetaContent('sf.scope');
-        const lightningOutAppId = getMetaContent('sf.lightning_out_app_id');
-        const oauth = new PKCEOAuth({ clientId, authBaseUrl, redirectUri, autoAuth, scope });
-        const token = await oauth.getAccessContext();
-        if (!token) return; // likely redirected
-
-        const instanceUrl = token.instance_url || getMetaContent('sf.instance_url');
-        if (!instanceUrl) throw new Error('Missing instance_url; not provided by token or meta tag');
-
-        const frontdoorUrl = await getFrontdoorUrl(instanceUrl, token.access_token);
-        return frontdoorUrl;
-    } catch (error) {
-        console.error('Authorization error:', error);
-        return null;
-    }
-}
-
-/**
- * Redirects to the main Angular application
- */
-function redirectToApp(frontdoorUrl) {
-    const targetUrl = new URL('/', location.origin);
-    targetUrl.searchParams.set('frontdoor-url', frontdoorUrl);
-    window.location.href = targetUrl.href;
-}
-
-/**
- * Shows an error message to the user
- */
-function showAuthError() {
-    const authMessage = document.getElementById('auth-message');
-    authMessage.textContent = 'Authorization failed. Please contact support.';
-    authMessage.style.color = 'red';
-}
-
 // Main execution
-window.onload = async function() {
+window.onload = async function () {
     try {
         const frontdoorUrl = await checkAuthorization();
         if (frontdoorUrl) {
@@ -68,26 +24,68 @@ function getMetaContent(name) {
     return el && typeof el.content === 'string' ? el.content.trim() : '';
 }
 
-function toBase64Url(bytes) {
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
+/**
+ * Performs authorization check
+ */
+async function checkAuthorization() {
+    try {
+        const clientId = getMetaContent('sf.client_id');
+        const authBaseUrl = getMetaContent('sf.auth_base_url');
+        const redirectUri = getMetaContent('sf.redirect_uri');
+        const autoAuth = getMetaContent('sf.auto_auth');
+        const scope = getMetaContent('sf.scope');
+        const lightningOutAppId = getMetaContent('sf.lightning_out_app_id');
+        const oauth = new PKCEOAuth({ clientId, authBaseUrl, redirectUri, autoAuth, scope });
+        const token = await oauth.getAccessToken();
+        if (!token) return; // likely redirected
+
+        const instanceUrl = token.instance_url || getMetaContent('sf.instance_url');
+        if (!instanceUrl) throw new Error('Missing instance_url; not provided by token or meta tag');
+
+        const frontdoorUrl = await getFrontdoorUrl(instanceUrl, token.access_token, lightningOutAppId);
+        return frontdoorUrl;
+    } catch (error) {
+        console.error('Authorization error:', error);
+        return null;
     }
-    const base64 = btoa(binary);
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-function generateRandomString(length = 64) {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    const randomValues = new Uint8Array(length);
-    crypto.getRandomValues(randomValues);
-    let result = '';
-    for (let i = 0; i < randomValues.length; i++) {
-        result += charset[randomValues[i] % charset.length];
+async function getFrontdoorUrl(instanceUrl, accessToken, lightningOutAppId) {
+    const url = new URL('/services/oauth2/lightningoutsingleaccess', instanceUrl);
+    url.searchParams.set('lightning_out_app_id', lightningOutAppId);
+    const bodyParams = new URLSearchParams();
+    bodyParams.set('access_token', accessToken);
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: bodyParams.toString()
+    });
+    if (!resp.ok) {
+        const errorBody = await resp.text();
+        throw new Error(`Lightning Out single access failed: ${resp.status} ${errorBody}`);
     }
-    return result;
+    const data = await resp.json();
+    const frontdoor = data.frontdoor_uri || data.frontdoorUrl || data.url || data.frontdoor;
+    if (!frontdoor) throw new Error('No frontdoor URL returned from Salesforce');
+    return frontdoor;
+}
+
+/**
+ * Redirects to the main Angular application
+ */
+function redirectToApp(frontdoorUrl) {
+    const targetUrl = new URL('/', location.origin);
+    targetUrl.searchParams.set('frontdoor-url', frontdoorUrl);
+    window.location.href = targetUrl.href;
+}
+
+/**
+ * Shows an error message to the user
+ */
+function showAuthError() {
+    const authMessage = document.getElementById('auth-message');
+    authMessage.textContent = 'Authorization failed. Please contact support.';
+    authMessage.style.color = 'red';
 }
 
 class PKCEOAuth {
@@ -108,10 +106,32 @@ class PKCEOAuth {
         this.tokenProxyUrl = config.tokenProxyUrl || getMetaContent('sf.token_proxy_url');
     }
 
+    toBase64Url(bytes) {
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+        const base64 = btoa(binary);
+        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+
+    generateRandomString(length = 64) {
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+        const randomValues = new Uint8Array(length);
+        crypto.getRandomValues(randomValues);
+        let result = '';
+        for (let i = 0; i < randomValues.length; i++) {
+            result += charset[randomValues[i] % charset.length];
+        }
+        return result;
+    }
+
     async generateCodeChallenge(verifier) {
         const data = new TextEncoder().encode(verifier);
         const digest = await crypto.subtle.digest('SHA-256', data);
-        return toBase64Url(new Uint8Array(digest));
+        return this.toBase64Url(new Uint8Array(digest));
     }
 
     saveAuthState(state) {
@@ -169,9 +189,9 @@ class PKCEOAuth {
 
     async beginAuth() {
         if (!this.clientId) throw new Error('Missing Salesforce Connected App client_id');
-        const codeVerifier = generateRandomString(96);
+        const codeVerifier = this.generateRandomString(96);
         const codeChallenge = await this.generateCodeChallenge(codeVerifier);
-        const state = generateRandomString(24);
+        const state = this.generateRandomString(24);
         this.saveAuthState({ code_verifier: codeVerifier, state });
         const url = this.buildAuthorizeUrl({ codeChallenge, state });
         window.location.assign(url);
@@ -238,7 +258,7 @@ class PKCEOAuth {
         return this.saveToken(token);
     }
 
-    async getAccessContext() {
+    async getAccessToken() {
         // If redirected back with ?code=, complete the exchange first
         const callbackToken = await this.handleRedirectCallbackIfPresent();
         if (callbackToken) return callbackToken;
@@ -251,26 +271,4 @@ class PKCEOAuth {
         }
         throw new Error('No valid Salesforce session. Authentication required.');
     }
-}
-
-
-async function getFrontdoorUrl(instanceUrl, accessToken) {
-    const lightningOutAppId = getMetaContent('sf.lightning_out_app_id');
-    const base = instanceUrl.replace(/\/$/, '');
-    const url = `${base}/services/oauth2/lightningoutsingleaccess?lightning_out_app_id=${encodeURIComponent(lightningOutAppId)}`;
-    const bodyParams = new URLSearchParams();
-    bodyParams.set('access_token', accessToken);
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: bodyParams.toString()
-    });
-    if (!resp.ok) {
-        const errorBody = await resp.text();
-        throw new Error(`Lightning Out single access failed: ${resp.status} ${errorBody}`);
-    }
-    const data = await resp.json();
-    const frontdoor = data.frontdoor_uri || data.frontdoorUrl || data.url || data.frontdoor;
-    if (!frontdoor) throw new Error('No frontdoor URL returned from Salesforce');
-    return frontdoor;
 }
