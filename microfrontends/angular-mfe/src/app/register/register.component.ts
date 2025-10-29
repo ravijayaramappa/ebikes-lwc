@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CanComponentDeactivate } from '../guards/unsaved.guard';
@@ -11,6 +11,11 @@ import bridge from '../lib/bridge';
   template: `
     <div class="card" *ngIf="!submitted; else confirmation">
       <h2>Product Registration<span *ngIf="productName"> — {{ productName }}</span></h2>
+      <label for="productName">Product</label>
+      <input id="productName" name="productName" [value]="productName" disabled />
+
+      <label for="productId">Product ID</label>
+      <input id="productId" name="productId" [value]="model.productId || productIdInput" disabled />
       <form (ngSubmit)="submit()">
         <label for="name">Full Name</label>
         <input id="name" name="name" [(ngModel)]="model.name" (ngModelChange)="onChange()" required />
@@ -41,7 +46,9 @@ import bridge from '../lib/bridge';
     </ng-template>
   `
 })
-export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnInit {
+export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnInit, OnChanges {
+  @Input() productNameInput: string = '';
+  @Input() productIdInput: string = '';
   model: any = {};
   private savedSnapshot: string = JSON.stringify(this.model);
   submitted = false;
@@ -56,6 +63,16 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnI
       this.dataHandler = (e: any) => this.applyIncomingData(e?.detail || {});
       (bridge as any).addEventListener?.('data', this.dataHandler);
     } catch {}
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['productNameInput']) {
+      this.productName = this.productNameInput || this.productName;
+    }
+    if (changes['productIdInput']) {
+      // Keep product id in the local model for potential submission
+      this.model.productId = this.productIdInput || this.model.productId;
+    }
   }
 
   hasUnsavedChanges(): boolean {
@@ -111,6 +128,9 @@ export class RegisterComponent implements CanComponentDeactivate, OnDestroy, OnI
     if (payload && typeof payload === 'object') {
       if (payload.productName && payload.productName !== this.productName) {
         this.productName = payload.productName;
+      }
+      if (payload.productId && payload.productId !== this.model.productId) {
+        this.model.productId = payload.productId;
       }
     }
   }

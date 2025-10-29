@@ -23,18 +23,22 @@ import { DealerLocatorComponent } from '../dealer-locator/dealer-locator.compone
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px;">
-      <h3>Embedeable Dealer Locator (native Angular component)</h3>
-      <app-dealer-locator></app-dealer-locator>
+    <div *ngIf="showRegister" class="card" style="margin-top:16px;">
+      <h3>Product Registration</h3>
+      <app-register [productNameInput]="selectedProductName" [productIdInput]="selectedProductId"></app-register>
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <h3>Embedeable Product Registration (native Angular component)</h3>
-      <app-register></app-register>
+      <h3>Dealer Locator</h3>
+      <app-dealer-locator></app-dealer-locator>
     </div>
   `
 })
 export class HomeComponent {
+    selectedProductId: string = '';
+    selectedProductName: string = '';
+    showRegister = false;
+
     ngOnInit() {
         let params = new URLSearchParams(document.location.search);
         const frontdoorUrl = params.get('frontdoor-url');
@@ -50,12 +54,20 @@ export class HomeComponent {
         }
 
         const loComp = document.getElementById("loComp") as any;
-        loComp.addEventListener('viewproduct', (event: any) => {
-            console.log('navigate event for product details', event, event.detail.productId);
-        });
+        loComp.addEventListener('viewproduct', (event: any) => this.onLoProduct(event));
         const loComp2 = document.getElementById("loComp2") as any;
-        loComp2.addEventListener('viewproduct', (event: any) => {
-            console.log('navigate event for product details', event, event.detail.productId);
-        });
+        loComp2.addEventListener('viewproduct', (event: any) => this.onLoProduct(event));
+    }
+
+    onLoProduct(event: any) {
+        // Expect detail: { productId, productName? }
+        const d = event?.detail || {};
+        this.selectedProductId = d.productId || '';
+        this.selectedProductName = d.productName || this.selectedProductName;
+        this.showRegister = !!this.selectedProductId;
+    }
+
+    closeRegister() {
+        this.showRegister = false;
     }
 }
